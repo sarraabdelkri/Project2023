@@ -1,0 +1,156 @@
+.takeQuizWrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.left {
+  flex: 1;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.center {
+  flex: 1;
+}
+
+.body {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.questionName {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.questionBubbleWrapper {
+  margin-bottom: 20px;
+}
+
+.questionBubble {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #dadfea;
+  color: #555;
+  text-align: center;
+  line-height: 30px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.selectedBubble {
+  background-color: #00aaf1;
+  color: #fff;
+}
+
+.bubbleCorrect {
+  background-color: #3dc05c;
+  color: #fff;
+}
+
+.bubbleInorrect {
+  background-color: #ff4757;
+  color: #fff;
+}
+
+.right {
+  flex: 1;
+  margin-left: 20px;
+}
+
+.navBtn {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+button {
+  margin-right: 10px;
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: 10px;
+  }
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+  .center {
+    margin-top: 20px;
+  }
+  .body {
+    flex-direction: column;
+  }
+  .right {
+    margin-left: 0;
+    margin-top: 20px;
+  }
+}
+
+.progressBar {
+  display: block;
+  margin: 20px auto;
+  width: 170px;
+  height: 170px;
+  position: relative;
+}
+
+.progressBar .circle {
+  stroke: #dadfea;
+  fill: none;
+  stroke-width: 15;
+  stroke-linecap: round;
+  transform: translate(5px, 5px);
+}
+
+.progressBar .progress {
+  stroke: #00aaf1;
+  fill: none;
+  stroke-width: 15;
+  stroke-linecap: round;
+  stroke-dasharray: 0 440;
+  stroke-dashoffset: 0;
+  transform: translate(5px, 5px);
+  transition: stroke-dasharray 0.5s ease-out, stroke-dashoffset 0.5s ease-out;
+}
+
+.progressBar .progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #00aaf1;
+}
+
+.progressBar.complete .progress {
+  stroke-dasharray: 440 440;
+}
+
+.progressBar.complete .progress-text {
+  color: #5cb85c;
+}
+
+.scrollContainer {
+  overflow: auto;
+}
