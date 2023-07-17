@@ -1,95 +1,110 @@
-const assessment = require('../model/assessment');
 const Assessment = require('../model/assessment');
 const User = require("../model/userModel");
 
 // Create Assessment
 const createAssessment = async (req, res) => {
-    let assessment = new Assessment({
-        ...req.body.assessment,
-        createdBy: req.body.createdBy,
-        questions: req.body.assessment.questions
-            ? req.body.assessment.questions.map((ques) => {
-                return {
-                    ...ques,
-                    answers: ques.answers.map((ans) => {
-                        return {
-                            name: ans,
-                            selected: false,
-                        };
-                    }),
-                };
-            })
-            : [],
-    });
-    assessment.save().then((result) => {
+    try {
+        let assessment = new Assessment({
+            ...req.body.assessment,
+            createdBy: req.body.createdBy,
+            questions: req.body.assessment.questions
+                ? req.body.assessment.questions.map((ques) => {
+                    return {
+                        ...ques,
+                        answers: ques.answers.map((ans) => {
+                            return {
+                                name: ans,
+                                selected: false,
+                            };
+                        }),
+                    };
+                })
+                : [],
+        });
+        const result = await assessment.save();
         res.status(200).json({ success: true });
-    });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
 };
+
 
 // AssessmentBy idUser /my-assessment/:id
 const getMyAssessment = async (req, res) => {
-    Assessment.find({ createdBy: req.params.id })
-        .then(assessment => {
-            res.status(200).json({ assessment });
-        })
+    try {
+        const assessments = await Assessment.find({ createdBy: req.params.id });
+        res.status(200).json({ assessment: assessments });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
 };
 
-// All Assessment /all-assessment
+
 const getAllAssessment = async (req, res) => {
-    Assessment.find()
-        .then(assessments => {
-            res.status(200).json({ assessments });
-        })
+    try {
+        const assessments = await Assessment.find();
+        res.status(200).json({ assessments });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
 };
+
 
 // Assessment by id /assessment/:id
 const getAssessment = async (req, res) => {
-    Assessment.findOne({ _id: req.params.id }).then(assessment => {
+    try {
+        const assessment = await Assessment.findOne({ _id: req.params.id });
+        if (!assessment) {
+            return res.status(404).json({ success: false, message: 'Assessment not found' });
+        }
         res.status(200).json({ assessment });
-    })
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
 };
 
 // updateOne add comment
 const addComment = async (req, res) => {
-    Assessment.updateOne({ _id: req.body.assessmentId }, {
-        $push: {
-            comments: {
-                sentFrom: req.body.sentFrom,
-                message: req.body.message
+    try {
+        await Assessment.updateOne(
+            { _id: req.body.assessmentId },
+            {
+                $push: {
+                    comments: {
+                        sentFrom: req.body.sentFrom,
+                        message: req.body.message,
+                    },
+                },
             }
-        }
-    }).then(assessment => {
+        );
         res.status(200).json({ success: true });
-    }).catch(er => {
-        res.status(500).send(er);
-    })
+    } catch (err) {
+        res.status(500).send(err);
+    }
 };
+
 
 
 const deleteComment = async (req, res) => {
-    const { assessmentId, commentId } = req.body;
-
-    Assessment.updateOne({ _id: assessmentId }, {
-        $pull: {
-            comments: {
-                _id: commentId
-            }
-        }
-    })
-        .then(assessment => {
-            if (assessment.nModified === 0) {
-                return res.status(404).json({ message: 'Comment not found.' });
-            }
-            res.status(200).json({ success: true });
-        })
-        .catch(error => {
-            res.status(500).send(error);
-        })
+    try {
+        const { assessmentId, sentFrom, message } = req.body;
+        await Assessment.updateOne(
+            { _id: assessmentId },
+            { $pull: { comments: { sentFrom, message } } }
+        );
+        res.status(200).json({ success: true });
+    } catch (err) {
+        res.status(500).send(err);
+    }
 };
 
-// Like Assessment
 const LikeAssessment = async (req, res) => {
-    User.findOne({ _id: req.body.userId, likedAssessments: { $in: [req.body.assessmentId] } }).then(async user => {
+    try {
+        const user = await User.findOne({ _id: req.body.userId, likedAssessments: { $in: [req.body.assessmentId] } });
         if (!user) {
             await User.updateOne({ _id: req.body.userId }, {
                 $push: {
@@ -115,8 +130,13 @@ const LikeAssessment = async (req, res) => {
             });
             res.status(200).json({ message: 'removed from liked' });
         }
-    })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: 'An error occurred', error });
+    }
 };
+
+
 
 // Update an assessment by ID
 const updateAssessment = async (req, res) => {
@@ -136,7 +156,7 @@ const updateAssessment = async (req, res) => {
             data: updatedAssessment,
         });
     } catch (error) {
-        console.error(error);
+        console.log(error);
         res.status(500).json({ success: false, message: "Server error" });
     }
 };
@@ -144,21 +164,33 @@ const updateAssessment = async (req, res) => {
 // Delete assessment by id
 const deleteAssessment = async (req, res) => {
     try {
+        console.log(req.params)
         const { id } = req.params;
+        console.log(id)
         await Assessment.findByIdAndDelete(id);
         res.status(200).json({
             success: true,
             message: "Assessment deleted successfully",
         });
     } catch (error) {
-        console.error(error);
+        console.log(error);
         res.status(500).json({ success: false, message: "Server error" });
     }
 };
 
-
+const getAssessmentsByCourseName = async (req, res, next) => {
+    const { courseName } = req.params;
+    try {
+        const assessments = await Assessment.find({ courseName });
+        res.status(200).json({ success: true, assessments });
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
 
 module.exports = {
+    getAssessmentsByCourseName,
     LikeAssessment,
     addComment,
     getAssessment,

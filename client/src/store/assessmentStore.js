@@ -23,7 +23,19 @@ const useAssessmentStore = create((set, get) => ({
         if (res.status === 200) {
             console.log(res.data);
         }
-    }
+    },
+
+    getAssessmentsByCourseName: async (courseName) => {
+        const res = await assessmentService.getAssessmentsByCourseName(courseName);
+        if (res.status === 200) {
+            const assessment = res.data.assessment;
+            set({ assessment });
+            return assessment;
+        } else {
+            console.error("Failed to fetch quiz");
+            return null;
+        }
+    },
 }));
 
 export default useAssessmentStore;

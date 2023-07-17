@@ -19,7 +19,7 @@ export function EditContracts() {
 
   return (
     <AppLayout>
-      <AppLayout.Header>Settings</AppLayout.Header>
+      <AppLayout.Header> Edit Contracts</AppLayout.Header>
       <AppLayout.Content>
         <div className="p-6">
           <div className="rounded-lg border border-gray-300">

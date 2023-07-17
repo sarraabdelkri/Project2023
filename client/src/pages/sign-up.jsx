@@ -7,6 +7,7 @@ import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import { Alert, Typography } from "@material-tailwind/react";
 import { useForm } from "react-hook-form";
 import { Spinner } from "@/widgets";
+import stylesheet from "../../public/css/stylesheet.css";
 
 export function SignUp() {
   const navigate = useNavigate();
@@ -73,7 +74,7 @@ export function SignUp() {
       <div className="bg-orange-mist flex h-screen w-full flex-1 flex-col items-center justify-between p-0 sm:p-20">
         <div className="flex-1"></div>
         <div className="border-orange-light w-full flex-1 rounded-lg border bg-white p-4 shadow-lg sm:w-[400px] sm:p-10">
-          <div className="mb-10 flex justify-center">
+          <div className="mb-4 flex justify-center">
             <Link aria-label="ES" to="/">
               <img
                 alt="ES Logo"
@@ -85,7 +86,7 @@ export function SignUp() {
               />
             </Link>
           </div>
-          <h1 className="mb-8 text-center	text-2xl font-medium">
+          <h1 className="mb-4 text-center	text-2xl font-medium">
             Create an account
           </h1>
           <button
@@ -132,7 +133,7 @@ export function SignUp() {
           </button>
           <p className="my-4 text-center text-gray-600">or</p>
           <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="mb-4" role="none">
+            <div className="mb-3" role="none">
               <div className="relative flex flex-col justify-center rounded border border-gray-400 bg-white transition duration-150 ease-in-out focus-within:border-primary">
                 <label
                   htmlFor="name"
@@ -142,7 +143,7 @@ export function SignUp() {
                 </label>
                 <input
                   type="name"
-                  className="w-full rounded-md bg-white px-2 pb-1 text-sm text-primary outline-none "
+                  className="w-full rounded-md bg-white px-2 pb-1 text-sm  outline-none "
                   id="name"
                   placeholder="Enter your name"
                   autoComplete="name"
@@ -163,7 +164,7 @@ export function SignUp() {
                 {errors.name && errors.name.message}
               </div>
             </div>
-            <div className="mb-4" role="none">
+            <div className="mb-3" role="none">
               <div className="relative flex flex-col justify-center rounded border border-gray-400 bg-white transition duration-150 ease-in-out focus-within:border-primary">
                 <label
                   htmlFor="email"
@@ -173,7 +174,7 @@ export function SignUp() {
                 </label>
                 <input
                   type="email"
-                  className="w-full rounded-md bg-white px-2 pb-1 text-sm text-primary outline-none "
+                  className="w-full rounded-md bg-white px-2 pb-1 text-sm  outline-none "
                   id="email"
                   placeholder="you@youremail.com"
                   autoComplete="username"
@@ -204,7 +205,7 @@ export function SignUp() {
                 </label>
                 <input
                   type="password"
-                  className="w-full rounded-md bg-white px-2 pb-1 text-sm text-primary outline-none "
+                  className="w-full rounded-md bg-white px-2 pb-1 text-sm outline-none "
                   id="password"
                   placeholder="Enter a  password"
                   {...register("password", {
@@ -265,7 +266,7 @@ export function SignUp() {
                 </div>
               )}
             </div>
-            <div className="mt-4 flex items-center justify-center">
+            <div className="mt-2 flex items-center justify-center">
               <Alert
                 show={show}
                 color="green"
@@ -288,7 +289,7 @@ export function SignUp() {
                 <Spinner />
               </div>
             )}
-            <div className="mt-4 flex items-center justify-center">
+            <div className="mt-1 flex items-center justify-center">
               <div>
                 <PrimaryButton type="submit">Register</PrimaryButton>
               </div>

@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const backendUrl = "http://localhost:9000";
+
+const backendUrl = "https://expertise-shaper-37ut.onrender.com/api";
+
 
 const API = axios.create({
     baseURL: backendUrl,

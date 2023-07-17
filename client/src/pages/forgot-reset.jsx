@@ -1,6 +1,6 @@
 import { PrimaryButton } from "@/widgets/buttons";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-
+import { toast } from "react-toastify"
 import useAuthStore from "@/store/authStore";
 import { useEffect, useState } from "react";
 
@@ -31,6 +31,9 @@ export function ForgotReset() {
   const onSubmit = async () => {
     setLoading(true);
     setError(null);
+    if (pass !== confirmPass) {
+      return toast.error("Confirm your password again!!")
+    }
     try {
       await reset(token, pass).then(() => navigate("/forgot-done"));
     } catch (error) {
@@ -92,7 +95,7 @@ export function ForgotReset() {
                   type="button"
                   aria-label="view-password"
                   className="text-light absolute right-0 cursor-pointer px-2 hover:text-primary"
-                  //   onClick={(e) => { togglePassword(e); }}
+                //   onClick={(e) => { togglePassword(e); }}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -148,7 +151,7 @@ export function ForgotReset() {
                   type="button"
                   aria-label="view-password"
                   className="text-light absolute right-0 cursor-pointer px-2 hover:text-primary"
-                  //   onClick={(e) => { togglePassword(e); }}
+                //   onClick={(e) => { togglePassword(e); }}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"

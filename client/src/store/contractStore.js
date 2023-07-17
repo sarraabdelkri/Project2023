@@ -3,7 +3,9 @@ import contractService from "@/services/contractService";
 
 const useContractStore = create((set, get) => (
   {
+    
     contracts: [],
+    contract :null,
     setContracts: (contracts) => set({ contracts }),
     fetchContracts: async () => {
         await contractService.getAllContracts().then((res) => {
@@ -11,7 +13,18 @@ const useContractStore = create((set, get) => (
                 set({ contracts: res.data.contracts });
             }
         });
+        console.log(get().contracts);
+        console.log("fetchContracts", get().contracts);
     },
+    
+    getContractByIdemployer: async (employerId) => {
+        await contractService.getContractByidemployer(employerId).then((res) => {
+            if (res.status == 200) {
+                set({ contracts: res.data.contracts });
+            }
+        });
+    },
+
     getuserbyid: async (id) => {
         await contractService.getuserbyid(id).then((res) => {
             if (res.status == 200) {
@@ -35,21 +48,46 @@ const useContractStore = create((set, get) => (
           return false; // or some other error value
         }
       },
-     addContract: async (startDate, endDate, type, user, job) => {
-       await contractService.addContract(startDate, endDate, type, user, job);
+     addContract: async (startDate, endDate,contractstatus, type, user, job,userId,jobId) => {
+       await contractService.addContract(startDate, endDate,contractstatus, type, user, job,userId,jobId);
        console.log("contract added");
       },
-// other methods...
+
   
-      updateContract: async (id, contractstatus) => {
-        try {
-          await contractService.updateContract(id, contractstatus);
-          return true; // or some other success value
-        } catch (error) {
-          return false; // or some other error value
+  updateContract: async (id, contractstatus) => {
+  await contractService.updateContract(id, contractstatus);
+  setContract(prevState => ({ ...prevState, status: contractstatus }));
+        },
+
+    getContractById: async (id) => {
+   const res = await contractService.getcontractById(id);
+        if (res.status == 200) {
+            const contract = res.data.contract;
+            set({ contract});
+           
+            return contract;
+           
+        }else {
+            console.error("Failed to fetch contract details");
+            return null;
+        
         }
-      },
-   
+        
+    },
+
+    applications: [],
+    application:null,
+    setApplications: (applications) => set({ applications }),
+    fetchApplications: async () => {
+        await contractService.getallapplications().then((res) => {
+            if (res.status == 200) {
+            // access the job array in the response
+            set({ applications :res.data.applications });
+            console.log ( {applications : res.data.applications});
+            
+            }
+        });
+        },
 }));
 
 export default useContractStore;

@@ -24,18 +24,23 @@ const contractSchema = new Schema({
   type: {
     type: String,
     required: true,
+    default: "CDD"
+
   },
   contractstatus: {
     type: String,
-    default: "Active",
     required: true,
     
   
     
   },
+  salary: {
+    type: Number,
+    //required: true,
+  },
   user: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    ref: "user",
      required: true,
   },
   job : {
@@ -43,6 +48,12 @@ const contractSchema = new Schema({
     ref: "job",
     
   },
+  atelier : {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "atelier",
+  },
+
+
  
 });
 

@@ -7,10 +7,9 @@ const useAuthStore = create((set) => ({
     logout: async () => {
         localStorage.removeItem("user");
         localStorage.removeItem("token");
-        localStorage.setItem("id", user._id);
-        localStorage.setItem("name", user.name);
-
-
+        localStorage.removeItem("id", user._id);
+        localStorage.removeItem("name", user.name);
+        localStorage.removeItem("enrolledcourses", JSON.stringify(enrolledcourses));
         set({ user: null });
     },
     login: async (email, password) => {
@@ -19,13 +18,15 @@ const useAuthStore = create((set) => ({
                 const user = res.data.user;
                 const token = res.data.accessToken;
                 const enrolledcourses = res.data.user.enrolledcourses
+                const name = res.data.user.name;
+               
                 set({ user: user });
                 localStorage.setItem("user", JSON.stringify(user));
                 localStorage.setItem("token", token);
                 localStorage.setItem("id", user._id);
+                localStorage.setItem("enrolledcourses", JSON.stringify(enrolledcourses));
                 localStorage.setItem("name", user.name);
 
-                localStorage.setItem("enrolledcourses", JSON.stringify(enrolledcourses));
                 return res;
             }
             console.error("Login error");

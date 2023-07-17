@@ -1,9 +1,8 @@
 .svg {
-  display: block;
+  display: flex;
   margin: 20px auto;
   max-width: 170px;
-  margin-top: 0px;
-  margin-right: 45%;
+  margin-right: 20%;
 }
 
 .svg-circle-bg {
@@ -17,7 +16,7 @@
 .svg-circle-text {
   font-size: 1.1rem;
   text-anchor: middle;
-  fill: #00aaf2;
+  fill: #05ab45;
   font-weight: bold;
   margin-top: 20px;
 }

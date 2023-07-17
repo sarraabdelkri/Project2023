@@ -6,7 +6,7 @@ const jobSchema = new Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'user',
         required: true
-      },
+    },
     title: {
         type: String,
         required: true
@@ -36,7 +36,17 @@ const jobSchema = new Schema({
     createdAt: {
         type: Date,
         default: Date.now
-      } 
+    },
+    applied: {
+        type: Number,
+        default: 0,
+    },
+    contracts: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Contract"
+        }
+      ]
 
 });
 

@@ -1,0 +1,124 @@
+.viewResultsWrapper {
+  display: flex;
+}
+
+.viewResultsWrapper .body {
+  padding: 20px;
+  width: 100%;
+}
+
+.viewResultsWrapper .body .header {
+  font-size: 1.7em;
+}
+
+.viewResultsWrapper .body .quizData {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 30px;
+  padding-left: 10px;
+}
+
+.viewResultsWrapper .body .quizData .left .header {
+  font-size: 1.2em;
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.viewResultsWrapper .body .score {
+  margin: 20px 0;
+  font-size: 2em;
+}
+
+.viewResultsWrapper .answers {
+  margin-top: 40px;
+}
+
+.viewResultsWrapper .answers .answer {
+  background-color: #e8ebf1;
+  margin-top: 15px;
+  font-size: 0.95em;
+  padding: 10px 5px;
+  box-shadow: 2px 2px 3px 1px rgba(0, 0, 0, 0.2);
+}
+.viewResultsWrapper .body img {
+  text-align: center;
+  width: 30vw;
+  margin-top: 10px;
+  margin-bottom: 50px;
+}
+.scrollContainer {
+  overflow: scroll;
+  height: 95%;
+}
+.paginationLink {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 4px;
+  background-color: #ddd;
+  color: #333;
+  margin: 4px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.paginationLink.active {
+  background-color: #4caf50;
+  color: white;
+}
+
+.paginationLink:hover:not(.active) {
+  background-color: #aaa;
+}
+
+.center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100px;
+  width: 100px;
+}
+
+.downloadButton {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.downloadButton:hover {
+  background-color: #0069d93a;
+}
+@media only screen and (max-width: 768px) {
+  .viewResultsWrapper {
+    flex-direction: column;
+  }
+  .viewResultsWrapper .body {
+    width: 90%;
+    margin: 0 auto;
+  }
+  .viewResultsWrapper .body .quizData {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-top: 20px;
+  }
+  .viewResultsWrapper .body .quizData .left {
+    margin-bottom: 10px;
+  }
+  .viewResultsWrapper .answers .answer {
+    font-size: 1em;
+    padding: 10px;
+    margin: 10px 0;
+  }
+  .viewResultsWrapper .body img {
+    width: 100%;
+    margin-top: 20px;
+    margin-bottom: 40px;
+  }
+}

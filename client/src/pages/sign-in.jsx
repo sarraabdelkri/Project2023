@@ -5,6 +5,7 @@ import useAuthStore from "@/store/authStore";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Spinner } from "@/widgets";
+import stylesheet from "../../public/css/stylesheet.css";
 export function SignIn() {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
@@ -36,7 +37,7 @@ export function SignIn() {
     try {
       setLoading(true);
       await login(email, password).then(() => {
-        navigate("/jobs");
+        navigate("/courses");
       });
     } catch (error) {
       console.log(error);
@@ -48,6 +49,7 @@ export function SignIn() {
 
   return (
     <div className="bg">
+    
       <div className="bg-orange-mist flex h-screen w-full flex-1 flex-col items-center justify-between p-0 sm:p-20">
         <div className="flex-1"></div>
         <div className="border-orange-light w-full flex-1 rounded-lg border bg-white p-4 shadow-lg sm:w-[400px] sm:p-10">
@@ -118,7 +120,7 @@ export function SignIn() {
                 </label>
                 <input
                   type="email"
-                  className="w-full rounded-md bg-white px-2 pb-1 text-sm text-primary outline-none "
+                  className="w-full rounded-md bg-white px-2 pb-1 text-sm  outline-none "
                   id="email"
                   placeholder="you@youremail.com"
                   autoComplete="email"
@@ -149,7 +151,7 @@ export function SignIn() {
                 </label>
                 <input
                   type="password"
-                  className="w-full rounded-md bg-white px-2 pb-1 text-sm text-primary outline-none "
+                  className="w-full rounded-md bg-white px-2 pb-1 text-sm  outline-none "
                   id="password"
                   placeholder="Your password"
                   autoComplete="current-password"

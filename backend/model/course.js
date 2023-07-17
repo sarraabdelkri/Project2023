@@ -73,7 +73,6 @@ const courseSchema = new Schema(
       contentType: String,
       fileName: String,
     },
-   
     reviews: [
       {
         user: {

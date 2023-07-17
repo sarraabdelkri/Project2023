@@ -2,8 +2,13 @@ import { PrimaryButton, SecondaryButton } from "@/widgets/buttons";
 import { Navbar } from "@/widgets/layout";
 import { Link } from "react-router-dom";
 import { CheckIcon } from "@heroicons/react/24/outline";
+import { useEffect } from "react";
+import ReactGA from "react-ga";
 
 export function Home() {
+  useEffect(() => {
+    ReactGA.pageview(window.location.pathname);
+  }, []);
   return (
     <>
       <Navbar />

@@ -1,12 +1,20 @@
 const express = require("express");
 const router = express.Router();
 const courseController = require("../controller/courseController");
-const upload = require('../middleware/multer'); 
+const upload = require("../middleware/multer");
 
 router.get("/", courseController.getAllCourses);
+router.post(
+  "/:userId/:courseId/wishlist",
+  courseController.addCourseToWishList
+);
+router.delete(
+  "/:userId/:courseId/removeFromWishlist",
+  courseController.removeFromWishlist
+);
 router.get("/:id", courseController.getById);
 router.post(
-  "/:instructorId",
+  "/addCourse/:instructorId",
   upload.single("file"),
   courseController.addCourse
 );
@@ -33,4 +41,15 @@ router.put(
   courseController.updateProgress
 );
 router.get("/getCourse/:instructorId", courseController.getCourseByInstructor);
+
+router.get("/:courseId/content", courseController.getCourseContent);
+router.get("/getenrolledcourses/:userId", courseController.getEnrolledCourses);
+router.get("/similarcourses/:courseId", courseController.similarCourses);
+router.get("/youtubevideoet/courses", courseController.youtubevideo);
+router.get("/getWishList/:userId", courseController.getWishList);
+router.get("/isInWishList/:userId/:courseId", courseController.isInWishList);
+router.get("/courseProgress/:userId/:courseId", courseController.getCourseProgress)
+router.get('/:userId/courses/predict', courseController.predictCourses);
+router.get('/getbyname/:name', courseController.getIdCourseByCourseName);
+
 module.exports = router;

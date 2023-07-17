@@ -19,7 +19,7 @@ export function AllAssessments() {
 
   return (
     <AppLayout>
-      <AppLayout.Header>All Assessment</AppLayout.Header>
+      <AppLayout.Header>All Assessments</AppLayout.Header>
       <AppLayout.Content>
         <AssessmentsList />
       </AppLayout.Content>

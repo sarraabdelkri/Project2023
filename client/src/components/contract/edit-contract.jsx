@@ -3,75 +3,91 @@ import { SecondaryButton } from "@/widgets/buttons";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import useContractStore from "@/store/contractStore";
+import PrimaryButton from "../../widgets/buttons/primary-button";
+import { useLocation } from "react-router-dom";
 import { Spinner } from "@/widgets";
+import {
+    UserCircleIcon,
+    NoSymbolIcon,
+    CheckCircleIcon,
+    CheckIcon,
+} from "@heroicons/react/24/outline";
+import axios from "axios";
+import { useNavigate, useParams } from "react-router-dom";
+import { useEffect } from "react";
+import {
+    FormGroup,
+    FormControl,
+    InputLabel,
+    Input,
+    Button,
+    styled,
+    Typography,
+    Select,
+    MenuItem,
+} from "@mui/material";
 
-export function EditContract({ contract }) {
-  const updateContract = useContractStore((state) => state.updateContract);
+export function EditContract() {
+    const Container = styled(FormGroup)`
+    width: 50%;
+    margin: 5% 0 0 25%;
+    & > div {
+        margin-top: 20px
+`;
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm();
+    const fetchContracts = useContractStore((state) => state.fetchContracts);
+    const updateContract = useContractStore((state) => state.updateContract);
+    const [loading, setLoading] = useState(false);
+    const [contractstatus, setContractstatus] = useState("");
+    const { id } = useParams();
 
-  const [isLoading, setLoading] = useState(false);
+    let navigate = useNavigate();
 
-  const [contractstatus, setContractstatus] = useState(
-    contract?.contractstatus
-  );
+    useEffect(() => {
+        fetchContracts();
+    }, []);
 
-  const onSubmit = async (data) => {
-    try {
-      setLoading(true);
-      await updateContract(id, contractstatus).then(() => {
-        toast.success("Contract updated");
-        setLoading(false);
-      });
-    } catch (error) {
-      toast.error(error.response.data.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    let urll = `https://expertise-shaper-37ut.onrender.com/api/contract/fetch-pdf/${userId}/${jobId}/${atelierId}`;
+    const handleSubmit = async () => {
+        try {
+            const response = await updateContract(id, contractstatus);
+            const pdfResponse = await axios.get(urll, {
+                responseType: "blob",
+            });
+            const pdfBlob = new Blob([pdfResponse.data], { type: "application/pdf" });
+            saveAs(pdfBlob, "newPdf.pdf");
+            navigate("/contract");
+        } catch (error) {
+            // Handle error
+        }
+    };
 
-  return (
-    <div>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="mb-4" role="none">
-          <div className="relative flex flex-col justify-center rounded border border-gray-400 bg-white transition duration-150 ease-in-out focus-within:border-primary">
-            <select
-              className="w-full rounded-md bg-white px-2 pb-1 text-sm text-primary outline-none"
-              id="contractStatus"
-              value={contractstatus}
-              onChange={(e) => {
-                setContractstatus(e.target.value);
-              }}
-            >
-              <option value="">-- Select Contract Status --</option>
-              <option value="terminated">Terminated</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="renewed">Renewed</option>
-            </select>
-          </div>
 
-          <div className="mt-1 text-xs font-medium italic text-red-300">
-            {errors.contractstatus && errors.contractstatus.message}
-          </div>
-        </div>
-        {isLoading && (
-          <div>
-            <Spinner />
-          </div>
-        )}
-        <div className="mt-4 h-[1px] w-full bg-gray-300"></div>
-        <div className="mt-4 flex items-center">
-          <div>
-            <SecondaryButton type="submit">Save</SecondaryButton>
-          </div>
-        </div>
-      </form>
-    </div>
-  );
+    return (
+        <Container injectFirst>
+            <Typography variant="h4">Edit Contract</Typography>
+            <FormControl>
+                <Select
+                    value={contractstatus}
+                    onChange={(e) => setContractstatus(e.target.value)}
+                    displayEmpty
+                    inputProps={{ "aria-label": "Select Contract Status" }}
+                >
+                    <MenuItem value="" disabled>
+                        Select a Contract
+                    </MenuItem>
+
+                    <MenuItem value="cancelled">Cancelled</MenuItem>
+                    <MenuItem value="Renewed">Renewed</MenuItem>
+                </Select>
+                <br />
+
+                <PrimaryButton variant="contained" onClick={handleSubmit}>
+                    Update Contract
+                </PrimaryButton>
+            </FormControl>
+        </Container>
+    );
 }
 
 export default EditContract;

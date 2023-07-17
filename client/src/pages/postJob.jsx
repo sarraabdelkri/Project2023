@@ -13,7 +13,7 @@ import { useForm } from "react-hook-form";
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Grid, Typography, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 
-function postJob() {
+export function PostJob() {
     const [open, setOpen] = useState(false);
     const { register, handleSubmit, formState: { errors } } = useForm();
     const user = JSON.parse(localStorage.getItem("user"));
@@ -30,17 +30,17 @@ function postJob() {
         try {
             axios.interceptors.request.use(
                 (config) => {
-                  const token = localStorage.getItem('token');
-                  if (token) {
-                    config.headers.Authorization = `Bearer ${token}`;
-                  }
-                  return config;
+                    const token = localStorage.getItem('token');
+                    if (token) {
+                        config.headers.Authorization = `Bearer ${token}`;
+                    }
+                    return config;
                 },
                 (error) => {
-                  return Promise.reject(error);
+                    return Promise.reject(error);
                 }
-              );
-            await axios.post(`http://localhost:9000/job/addjob`, data)
+            );
+            await axios.post(`https://expertise-shaper-37ut.onrender.com/api/job/addjob`, data)
             setOpen(false);
             toast.success("Your job listing has been successfully posted!");
         } catch (err) {
@@ -62,7 +62,7 @@ function postJob() {
             <div className="mb-4">
                 <img src="/img/logo-hire.png" alt="ES Hire" width="144" />
             </div>
-            <p className="break-keep text-xs text-primary font-normal break-words mb-2 ">Start hiring the most credible candidates with proof-of-skills!</p>
+            <p className="break-keep text-xs text font-normal break-words mb-2 ">Start hiring the most credible candidates with proof-of-skills!</p>
             <PrimaryButton onClick={handleClickOpen}>Post a Job</PrimaryButton>
         </div>
 
@@ -189,4 +189,4 @@ function postJob() {
 
 }
 
-export default postJob;
+export default PostJob;

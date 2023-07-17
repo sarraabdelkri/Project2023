@@ -28,7 +28,7 @@ const ResetPassword = () => {
     }
     try {
       const response = await axios.post(
-        `http://localhost:8080/user/reset-password/${resetToken}`,
+        `https://expertise-shaper-37ut.onrender.com/api/user/reset-password/${resetToken}`,
         { newPassword }
       );
       setMessage(response.data.message);

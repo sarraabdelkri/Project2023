@@ -6,9 +6,17 @@ const svgCaptcha = require("svg-captcha");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const bcrypt = require("bcrypt");
+// Generate a salt with 10 rounds
+const salt = bcrypt.genSaltSync(10);
+// Hash the password with the salt
+const hash = bcrypt.hashSync('password', salt);
+// Compare a password to the hash
+const isMatch = bcrypt.compareSync('password', hash);
 const path = require("path");
 //mongo user verification model
 const UserVerification = require("../model/userVerification");
+const userSession = require("../model/userSession");
+
 //unique string
 const { v4: uuidv4 } = require("uuid");
 const userVerification = require("../model/userVerification");
@@ -72,20 +80,26 @@ const login = async (req, res, next) => {
 
     const accessToken = await signAccessToken(user.id);
     if (isMatch) {
-      if (!user.verified) {
-        return res.status(401).json({
-          message: "Please verify your email",
-        });
-      }
+    //   if (!user.verified) {
+    //     return res.status(401).json({
+    //       message: "Please verify your email",
+    //     });
+    //   }
       if (user.banned) {
         return res.status(401).json({
           message: "You are suspended from the platform",
         });
       }
       const { password, ...userWithoutPassword } = user.toObject();
+      const session = new userSession({
+        userId: user._id,
+        startTime: new Date(),
+      });
+      await session.save();
       res.status(200).json({
         message: "Login successful",
         accessToken,
+        session,
         user: userWithoutPassword,
       });
     } else {
@@ -103,16 +117,40 @@ const login = async (req, res, next) => {
 };
 //logout
 const logout = async (req, res, next) => {
-  res.cookie("token", null, {
-    expires: new Date(Date.now()),
-    httpOnly: true,
-  });
-
-  res.status(200).json({
-    success: true,
-    message: "Logged Out",
-  });
+  const token = req.cookies.token;
+  if (!token) {
+    return res.status(400).json({
+      message: "No token found",
+    });
+  }
+  try {
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decodedToken.userId;
+    const session = await userSession.findOne({
+      userId: userId,
+      endTime: null,
+    });
+    if (session) {
+      session.endTime = new Date();
+      await session.save();
+    }
+    res.cookie("token", null, {
+      expires: new Date(Date.now()),
+      httpOnly: true,
+    });
+    res.status(200).json({
+      success: true,
+      message: "Logged Out",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "Error logging out",
+      error: error.message || "Internal server error",
+    });
+  }
 };
+
 //get user by id
 const getById = async (req, res, next) => {
   const id = req.params.id;
@@ -120,7 +158,8 @@ const getById = async (req, res, next) => {
   try {
     user = await User.findById(id)
       .populate("enrolledcourses.course", "name enddate startdate")
-      .populate("postedCourses.course", "name enddate startdate");
+      .populate("postedCourses.course", "name enddate startdate")
+      .populate("notifications.notification", "message createdAt");
   } catch (err) {
     console.log(err);
   }
@@ -161,36 +200,155 @@ const Userslist = async (req, res, next) => {
   }
 };
 
-// Update user
 const updateUser = async (req, res) => {
-  const connectUserId = req.auth.userId;
+  const userId = req.params.id.trim();
+  const { name, email, password } = req.body;
 
-  User.findById(connectUserId).then((user) => {
-    const { name, email, password } = req.body;
+  try {
+    const user = await User.findById(userId);
 
-    if (!user || user.role !== "admin") {
-      if (!user) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-
-      User.findByIdAndUpdate(
-        req.params._id,
-        { name, email, password },
-        { new: true }
-      )
-        .then((user) => {
-          if (!user) {
-            return res.status(404).json({ message: "User not found" });
-          }
-
-          return res.status(200).json({ message: "User updated successfully" });
-        })
-        .catch((err) => {
-          return res.status(500).json(err);
-        });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
-  });
+
+    const isPasswordCorrect = await bcrypt.compare(String(password), String(user.password));
+
+    if (!isPasswordCorrect) {
+      return res.status(401).json({ success: false, message: 'Incorrect password' });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { name, email },
+      { new: true }
+    );
+
+    console.log('Updated user:', updatedUser);
+
+    res.status(200).json({ success: true, user: updatedUser });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({ success: false, error: error.message });
+  }
 };
+
+
+
+
+const updateUserpassword = async (req, res) => {
+  const connectUserId = req.params.id.trim();
+  const { password } = req.body;
+  const user = await User.findById(connectUserId);
+
+
+  // Make sure that password is a string or buffer
+  const passwordBuffer = Buffer.from(String(password), 'utf-8');
+
+  
+  try {
+    const hashedPassword = await bcrypt.hash(passwordBuffer, 10);
+    const id = connectUserId.replace(/\n/g, '');
+
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { password: hashedPassword },
+      { new: true }
+    );
+    const mailOptions = {
+      from: process.env.EXPERTISE_SHAPER_EMAIL,
+      to: user.email,
+      subject: "Update Password",
+      html: `
+<!doctype html>
+<html lang="en-US">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+    <title>Payment success</title>
+    <meta name="description" content="payment verification">
+    <style type="text/css">
+        a:hover {text-decoration: underline !important;}
+    </style>
+</head>
+<body marginheight="0" topmargin="0" marginwidth="0" style="margin: 0px; background-color: #f2f3f8;" leftmargin="0">
+    <!--100% body table-->
+    <table cellspacing="0" border="0" cellpadding="0" width="100%" bgcolor="#f2f3f8"
+        style="@import url(https://fonts.googleapis.com/css?family=Rubik:300,400,500,700|Open+Sans:300,400,600,700); font-family: 'Open Sans', sans-serif;">
+        <tr>
+            <td>
+                <table style="background-color: #f2f3f8; max-width:670px;  margin:0 auto;" width="100%" border="0"
+                    align="center" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td style="height:80px;">&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:center;">
+                          
+                        
+                          
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="height:20px;">&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <table width="95%" border="0" align="center" cellpadding="0" cellspacing="0"
+                                style="max-width:670px;background:#fff; border-radius:3px; text-align:center;-webkit-box-shadow:0 6px 18px 0 rgba(0,0,0,.06);-moz-box-shadow:0 6px 18px 0 rgba(0,0,0,.06);box-shadow:0 6px 18px 0 rgba(0,0,0,.06);">
+                                <tr>
+                                    <td style="height:40px;">&nbsp;</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:0 35px;">
+                                        <h1 style="color:#1e1e2d; font-weight:500; margin:0;font-size:32px;font-family:'Rubik',sans-serif;">Update Password 
+                                           </h1>
+                                        <span
+                                            style="display:inline-block; vertical-align:middle; margin:29px 0 26px; border-bottom:1px solid #cecece; width:100px;"></span>
+                                        <p style="color:#455056; font-size:15px;line-height:24px; margin:0;">
+                                           Dear ${user.name} We are writing to confirm that your password updated Success. We would like to take this opportunity to express our gratitude for choosing our platform for your learning needs.
+                                           <br />
+                                           Once again, thank you for choosing our platform for your learning journey. We look forward to seeing you succeed in the course.
+                                        </p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="height:40px;">&nbsp;</td>
+                                </tr>
+                            </table>
+                        </td>
+                    <tr>
+                        <td style="height:20px;">&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:center;">
+                            <p style="font-size:14px; color:rgba(69, 80, 86, 0.7411764705882353); line-height:18px; margin:0 0 0;">&copy; <strong>www.ExpertiseShaper.com</strong></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="height:80px;">&nbsp;</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    <!--/100% body table-->
+</body>
+</html>`,
+    };
+    await transporter.sendMail(mailOptions);
+    
+    console.log("Updated user:", updatedUser);
+    res.status(200).json({ success: true, user: updatedUser });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+
+
+
+
 
 //Delete user
 const deleteUser = (req, res) => {
@@ -238,10 +396,8 @@ const transporter = nodemailer.createTransport({
 });
 // send verification email
 const sendVerificationEmail = ({ _id, email }, res) => {
-  //url to be sent in email
   const url = process.env.BACKEND_URL;
   const uniqueString = uuidv4() + _id;
-  //mail options
   const mailOptions = {
     from: process.env.EXPERTISE_SHAPER_EMAIL,
     to: email,
@@ -252,7 +408,6 @@ const sendVerificationEmail = ({ _id, email }, res) => {
       }">link</a> to verify your email.</p>`,
   };
 
-  // hash the unique string and save it to the database
   const saltRounds = 10;
   bcrypt
     .hash(uniqueString, saltRounds)
@@ -297,7 +452,6 @@ const verifyUserEmail = async (req, res) => {
     .find({ userId })
     .then((result) => {
       if (result.length > 0) {
-        // user verification record exists so we proceed to verify the email
         const { expiresAt } = result[0];
         const hashedUniqueString = result[0].uniqueString;
         // check if the record has expired
@@ -324,8 +478,6 @@ const verifyUserEmail = async (req, res) => {
               res.redirect(`/user/verified/error=true&message=${message}`);
             });
         } else {
-          // valid record exists so we proceed to verify the email
-          // first compaare the hashed unique string with the one in the database
           bcrypt
             .compare(uniqueString, hashedUniqueString)
             .then((result) => {
@@ -358,7 +510,6 @@ const verifyUserEmail = async (req, res) => {
                     );
                   });
               } else {
-                // existing record but incorrect verification details passed
                 let message =
                   "Incorrect verification details passed. Check your inbox.";
                 res.redirect(`/user/verified/error=true&message=${message}`);
@@ -372,7 +523,6 @@ const verifyUserEmail = async (req, res) => {
             });
         }
       } else {
-        // user verification record does not exist
         let message =
           "Account record not found or has been verified already.Please signup or login to your account";
         res.redirect(`/user/verified/error=true&message=${message}`);
@@ -401,10 +551,8 @@ const transporteer = nodemailer.createTransport({
   },
 });
 const forgotPassword = async ({ body: { email } }, res) => {
-  // checking if email exists in the database
   const user = await User.findOne({ email });
 
-  // things to do if the user does not exist
   if (!user)
     return res
       .status(404)
@@ -412,18 +560,14 @@ const forgotPassword = async ({ body: { email } }, res) => {
 
   // generate a random token for the user
   const generatedToken = crypto.randomBytes(32);
-  // check for error
   if (!generatedToken) {
     return res.status(500).json({
       message: "An error occurred. Please try again later.",
       status: "error",
     });
   }
-
-  // converting the token to a hex string
   const convertTokenToHexString = generatedToken.toString("hex");
 
-  // set the token and expiring period for the token to the user schema
   user.resetToken = convertTokenToHexString;
   user.expireToken = Date.now() + 600000; //10 minutes
 
@@ -431,8 +575,7 @@ const forgotPassword = async ({ body: { email } }, res) => {
     const saveToken = await user.save();
     const userId = user._id;
 
-    // Send email to user with reset link
-    const resetLink = `http://localhost:${process.env.FRONTEND_PORT}/reset-password?resetToken=${saveToken.resetToken}`;
+    const resetLink = `${process.env.BACKEND_URL_HOSTNAME}/reset-password?resetToken=${saveToken.resetToken}`;
     const mailOptions = {
       from: process.env.EXPERTISE_SHAPER_EMAIL,
       to: email,
@@ -740,6 +883,21 @@ const requestEmployerProfile = async (req, res) => {
   }
 };
 
+const cancelRequest = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    user.employerRequest = false;
+    await user.save();
+    return res.status(200).json({ user });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 const approveEmployer = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -756,10 +914,26 @@ const approveEmployer = async (req, res) => {
   }
 };
 
+const declineEmployer = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    user.employerRequest = false;
+    await user.save();
+    return res.status(200).json({ message: "Employer profile declined" });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 const updateProfilePicture = async (req, res) => {
   try {
-    const { userId } = req.body;
+    const { userId } = req.params;
     const profilePicture = req.file.filename;
+
     const user = await User.findById(userId);
     user.profilePicture = profilePicture;
     await user.save();
@@ -768,6 +942,106 @@ const updateProfilePicture = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+const getnotifications = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const user = await User.findById(userId).populate(
+      "notifications",
+      "message createdAt"
+    );
+
+    const notifications = user.notifications;
+    res.json(notifications);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const isAdmin = async (req, res) => {
+  try {
+    const { token } = req.body;
+    const decoded = jwt.verify(token, "verySecretValue");
+    const user = await User.findById(decoded._id);
+    if (user.role === "admin") {
+      return res.status(200).json({ message: "admin" });
+    } else {
+      return res.status(200).json({ message: "not admin" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+const updateSession = async (req, res) => {
+  const userId = req.params.userId;
+  const session = await userSession.findOne({ userId }).sort({ startTime: -1 });
+  if (!session) {
+    return res.status(404).send({ message: "Session not found" });
+  }
+  session.endTime = new Date();
+  await session.save();
+
+  res.send(session);
+};
+
+const deleteSession = async (req, res) => {
+  const userId = req.params.userId;
+
+  const session = await userSession.findOne({ userId });
+  if (!session) {
+    return res.status(404).send({ message: "Session not found" });
+  }
+
+  await session.deleteOne();
+
+  res.send("session deleted");
+};
+const getSessionDurations = async (req, res) => {
+  const userId = req.params.userId;
+
+  const sessions = await userSession.find({ userId }).sort({ startTime: 1 });
+
+  if (!sessions.length) {
+    return res.status(404).send({ message: "No sessions found for user" });
+  }
+
+  const durations = sessions.slice(0, -1).map((session) => {
+    const startTime = new Date(session.startTime);
+    const endTime = new Date(session.endTime);
+    const duration = Math.round((endTime - startTime) / 1000); // in seconds
+    return duration;
+  });
+
+  const totalDuration = durations.reduce((acc, duration) => acc + duration, 0);
+
+  res.send({ totalDuration });
+};
+
+const getLastSessionDuration = async (req, res) => {
+  const userId = req.params.userId;
+
+  const session = await userSession
+    .findOne({ userId })
+    .sort({ startTime: -1 })
+    .skip(1);
+  if (!session) {
+    return res.status(404).send({ message: "Session not found" });
+  }
+  const startTime = new Date(session.startTime);
+  const endTime = new Date(session.endTime);
+  const duration = Math.round((endTime - startTime) / 1000); // in seconds
+
+  res.send({ duration });
+};
+
+const getEmployerRequests = async (req, res) => {
+    try {
+        const users = await User.find({ employerRequest: true });
+        res.json({users: users});
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
 
 module.exports = {
   Userslist,
@@ -788,6 +1062,16 @@ module.exports = {
   banUser,
   unbanUser,
   approveEmployer,
+  declineEmployer,
   requestEmployerProfile,
   updateProfilePicture,
+  getnotifications,
+  isAdmin,
+  updateSession,
+  deleteSession,
+  getLastSessionDuration,
+  getSessionDurations,
+  updateUserpassword,
+  cancelRequest,
+  getEmployerRequests,
 };

@@ -1,14 +1,15 @@
 import React from "react";
-import { Card, CardContent, Typography, Slider } from  "@mui/material";
+import { Card, CardContent, Typography, Slider } from "@mui/material";
+
+import { Container, Row, Col } from "react-bootstrap";
 
 function PriceRangeSlider({ priceRange, handlePriceRangeChange }) {
   return (
-    <Card>
-      <CardContent>
-        <Typography component="div" fontSize={15}>
-          Choose a price range
-        </Typography>
-        <div style={{ width: 150 }}>
+    <>
+      <div className="d-flex">
+        <div className="mr-3">Price:</div>
+
+        <div style={{ width: 120 }}>
           <Slider
             getAriaLabel={() => "price range"}
             value={priceRange}
@@ -16,11 +17,13 @@ function PriceRangeSlider({ priceRange, handlePriceRangeChange }) {
             max={10000}
             onChange={handlePriceRangeChange}
             valueLabelDisplay="auto"
-            color="primary"
+            sx={{
+              color: '#1E9645',
+            }}
           />
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </>
   );
 }
 

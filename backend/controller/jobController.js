@@ -3,7 +3,7 @@ const Job = require("../model/job");
 const getAllJobs = async (req, res, next) => {
     let job;
     try {
-        job = await Job.find();
+        job = await Job.find().populate('employer');
     } catch (err) {
         console.log(err);
     }
@@ -17,7 +17,7 @@ const getJobById = async (req, res, next) => {
     const id = req.params.id;
     let job;
     try {
-        job = await Job.findById(id);
+        job = await Job.findById(id).populate("employer");
     } catch (err) {
         console.log(err);
     }
@@ -42,6 +42,7 @@ const addJob = async (req, res, next) => {
             aboutJob,
         });
         await job.save();
+        
     } catch (err) {
         console.log(err);
     }
@@ -66,6 +67,7 @@ const updateJob = async (req, res, next) => {
             aboutJob,
         });
         job = await job.save();
+        
     } catch (err) {
         console.log(err);
     }

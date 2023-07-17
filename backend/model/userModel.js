@@ -48,7 +48,7 @@ const UserSchema = new Schema(
       default: false,
       required: false,
     },
-
+    skills: [String],
     enrolledcourses: [
       {
         course: {
@@ -86,7 +86,23 @@ const UserSchema = new Schema(
       type: Array,
       default: [],
     },
+    contract: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Contract",
+      },
+    ],
+
+    notifications: [
+      {
+        notification: {
+          type: Schema.Types.ObjectId,
+          ref: "Notification",
+        },
+      },
+    ],
   },
+
   {
     timestamps: true,
   }

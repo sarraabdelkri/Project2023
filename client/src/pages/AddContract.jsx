@@ -2,6 +2,8 @@ import { AppLayout } from "@/widgets/layout";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AddContract } from "@/components/contract";
+import { PrimaryButton } from "../widgets/buttons/primary-button";
+import { Container, Row, Col } from "react-bootstrap";
 
 export function AddContracts() {
   const navigate = useNavigate();
@@ -19,19 +21,16 @@ export function AddContracts() {
 
   return (
     <AppLayout>
-      <AppLayout.Header>AddContract</AppLayout.Header>
-      <AppLayout.Content>
-        <div className="p-6">
-          <div className="rounded-lg border border-gray-300">
-            <div className="rounded-t-lg border-b border-gray-300 bg-blue-gray-100/20 p-4 font-medium">
-              Add Profile
-            </div>
-            <div className="p-4">
-              <AddContract />
-            </div>
-          </div>
-        </div>
-      </AppLayout.Content>
+      <AppLayout.Header>Dashboard</AppLayout.Header>
+
+      <Container>
+        <Row>
+          <Col md={8}>
+            <AddContract />;
+          </Col>
+          <Col md={4}></Col>
+        </Row>
+      </Container>
     </AppLayout>
   );
 }

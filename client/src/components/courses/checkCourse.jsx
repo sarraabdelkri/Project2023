@@ -1,8 +1,8 @@
 import { AppLayout } from "@/widgets/layout";
 import { useEffect, useState } from "react";
 import courseStore from "@/store/courseStore";
-import { format } from "date-fns";
-import { useParams } from "react-router-dom";
+import notificationStore from "@/store/notificationStore";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import PrimaryButton from "../../widgets/buttons/primary-button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -13,257 +13,507 @@ import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import { useForm } from "react-hook-form";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
+import { ToastContainer, toast } from "react-toastify";
+import "../../../node_modules/react-toastify/dist/ReactToastify.css";
+import { Container, Col, Row } from "react-bootstrap";
+import Card from "react-bootstrap/Card";
+import { format } from "date-fns";
+import { ArrowSmallRightIcon, CheckIcon } from "@heroicons/react/24/outline";
+import { BeatLoader } from "react-spinners";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import axios from "axios";
+import Rating from "@material-ui/lab/Rating";
+import Box from "@material-ui/core/Box";
+import { Typography } from "@material-ui/core";
+
 export function CheckCourse() {
-  const getCourseById = courseStore((state) => state.getCourseById);
-  const course = courseStore((state) => state.course);
-  const addCourseToUser = courseStore((state) => state.addCourseToUser);
-  const user = JSON.parse(localStorage.getItem("user"));
-  const userId = user._id;
-  const enrolledcourses = JSON.parse(localStorage.getItem("enrolledcourses"));
+    const getCourseById = courseStore((state) => state.getCourseById);
+    const isInList = courseStore((state) => state.isInList);
+    const similarCourses = courseStore((state) => state.similarCourses);
+    const addToWishlist = courseStore((state) => state.addToWishlist);
+    const removeFromWishlist = courseStore((state) => state.removeFromWishlist);
+    const { sendNotification } = notificationStore();
+    const course = courseStore((state) => state.course);
+    const addCourseToUser = courseStore((state) => state.addCourseToUser);
+    const user = JSON.parse(localStorage.getItem("user"));
+    const userId = user._id;
+    const [open, setOpen] = useState(false);
+    const [relatedCourses, setRelatedcourses] = useState([]);
+    const getEnrolledCourses = courseStore((state) => state.getEnrolledCourses);
+    const getCourseProgress = courseStore((state) => state.getCourseProgress);
+    const [isenrolled, SetIsenrolled] = useState(false);
+    const { id } = useParams();
+    const [isInWishlist, setIsInWishlist] = useState();
+    const navigate = useNavigate();
+    const [ratings, setRatings] = useState([]);
+    const [averageRating, setAverageRating] = useState(0);
+    const [opens, setOpens] = useState(false);
+    const [rating, setRating] = useState("");
+    const [progress, setProgress] = useState();
+    const courseId = id;
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm();
+    const goToTakeCoursePage = () => {
+        navigate(`/courses/courseContent/${course._id}`);
+    };
+    const courseProgress = async () => {
+        const res = await getCourseProgress(userId, courseId)
+        setProgress(res.data)
+    }
+    const setwishlist = async () => {
+        const res = await isInList(userId, id);
+        setIsInWishlist(res.data.isInWishlist);
+    };
 
-  const [open, setOpen] = useState(false);
-  const { id } = useParams();
-  const theme = createTheme({
-    palette: {
-      primary: {
-        main: "#4CAF50",
-      },
-    },
-  });
-  const handleClickOpen = () => {
-    setOpen(true);
-  };
-  const handleClose = () => {
-    setOpen(false);
-  };
-  const handleEnroll = () => {
-    addCourseToUser(userId, course._id);
-    enrolledcourses.push(course);
-    localStorage.setItem("enrolledcourses", JSON.stringify(enrolledcourses));
-  };
-  useEffect(() => {
-    (async () => {
-      const courseData = await getCourseById(id);
-    })();
-  }, [getCourseById, id]);
+    const theme = createTheme({
+        palette: {
+            primary: {
+                main: "#4CAF50",
+            },
+        },
+    });
+    const addToWishList = async () => {
+        try {
+            await addToWishlist(userId, id);
+            toast.success("added to wishlist", { autoClose: 3000 });
+            setIsInWishlist(true);
+            await sendNotification(
+                userId,
+                `You have added ${course.name} course to your wishlist!`
+            );
+        } catch (error) {
+            console.error(error);
+            toast.error("can't be added to wish list", { autoClose: 3000 });
+        }
+    };
+    const removeWishList = async () => {
+        try {
+            await removeFromWishlist(userId, id);
+            toast.success("removed from wishlist", { autoClose: 3000 });
+            setIsInWishlist(false);
+        } catch (error) {
+            console.error(error);
+            toast.error("can't be removed to wish list", { autoClose: 3000 });
+        }
+    };
 
-  if (!course) {
-    return <div>Loading...</div>;
-  }
+    const isenrolledornot = async () => {
+        const response = await getEnrolledCourses(userId);
+        if (response) {
+            const enrolledCourseIds = response.map((course) => course.course);
+            if (enrolledCourseIds.includes(id)) {
+                SetIsenrolled(true);
+            }
+        }
+    };
 
-  return (
-    <>
-      <AppLayout>
-        <AppLayout.Header>Courses</AppLayout.Header>
-        <AppLayout.Content>
-          <div className="h-full overflow-scroll px-6 pb-10 pt-4">
-            <div className="mb-32 w-full lg:mb-16">
-              <ul>
-                <li className="hover:bg-gray-gray0 relative flex cursor-pointer border-b border-gray-300">
-                  <a className="w-full">
-                    <div className="flex items-start p-4 sm:p-6 ">
-                      <div className="mr-2">
-                        <div className="relative h-10 w-10">
-                          <div className="h-10 w-10 overflow-hidden rounded-full">
-                            <img
-                              className="border-primaryBorder flex h-10 w-10 items-center justify-center rounded-full rounded-full border bg-white bg-cover bg-center bg-no-repeat object-cover transition-opacity hover:opacity-90"
-                              src="https://peerlist-media.s3.amazonaws.com/company/foldhealth/logo.png"
-                              alt=""
-                              width="40"
-                              height="40"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      <div className="w-full">
-                        <div className="flex">
-                          <div className="mb-0.5 flex items-center justify-between">
-                            <p className="text-base font-medium  ">
-                              {" "}
-                              <span>{course.name} </span>
-                              <span className="text-sm font-normal">
-                                at Tunisia
-                              </span>
-                            </p>
-                          </div>
-                          <div
-                            className="end-0 top-0 flex"
-                            style={{ marginLeft: "240px" }}
-                          >
-                            <PrimaryButton onClick={handleClickOpen}>
-                              Enroll
-                            </PrimaryButton>
-                          </div>
-                        </div>
-                        <div className="mb-3 flex flex-wrap items-center">
-                          <p className=" mb-1 mr-1 text-xs font-normal capitalize sm:mb-0">
-                            {course.description}
-                          </p>
-                          <p className=" mb-1 mr-1 text-xs font-normal sm:mb-0">
-                            {" "}
-                            • {course.enrollment} Participants{" "}
-                          </p>
-                          <p className=" mb-1 mr-1 text-xs font-normal sm:mb-0">
-                            {" "}
-                            • [{" "}
-                            {format(
-                              new Date(course.startdate),
-                              "yyyy-MM-dd"
-                            )} -{" "}
-                            {format(new Date(course.enddate), "yyyy-MM-dd")}
-                          </p>
-                          <p className=" mb-1 text-xs font-normal sm:mb-0">
-                            {" "}
-                            ] • 8 days ago
-                          </p>
-                        </div>
-                        <div className="mt-2 hidden lg:block">
-                          <div className="mt-1 flex flex-wrap items-start">
-                            <span className="border-primaryBorder hover:bg-gray-gray1 mb-2 mr-2 inline-flex items-center justify-between rounded-full border bg-white px-3 py-0.5 text-xs capitalize ">
-                              <img
-                                alt=" "
-                                loading="lazy"
-                                width="16"
-                                height="16"
-                                decoding="async"
-                                data-nimg="1"
-                                className="mr-1 h-4 w-4 object-cover"
-                                src="https://d26c7l40gvbbg2.cloudfront.net/tool_icons/figma.svg"
-                              />
+    useEffect(() => {
+        const getSimilarCourses = async () => {
+            try {
+                const response = await similarCourses(id);
+                setRelatedcourses(response);
+            } catch (err) {
+                console.error(err);
+            }
+        };
+        getSimilarCourses();
+        isenrolledornot();
+        courseProgress()
+        setwishlist();
+    }, [id]);
+    const handleClickOpen = () => {
+        setOpen(true);
+    };
+    const handleClose = () => {
+        setOpen(false);
+    };
+    const handleEnroll = async () => {
+        addCourseToUser(userId, course._id);
+        await sendNotification(
+            userId,
+            `${course.name} course is paid successfuly!`
+        );
+    };
+    useEffect(() => {
+        (async () => {
+            const courseData = await getCourseById(id);
+        })();
+        const url = `https://expertise-shaper-37ut.onrender.com/api/review/${id}/reviews`;
+        console.log("Fetching contract data from:", url);
 
-                              <span className="capitalize leading-5 lg:inline">
-                                {course.category}
-                              </span>
-                            </span>
-                            <span className="border-primaryBorder hover:bg-gray-gray1 mb-2 mr-2 inline-flex items-center justify-between rounded-full border bg-white px-3 py-0.5 text-xs capitalize ">
-                              <img
-                                alt=" "
-                                loading="lazy"
-                                width="16"
-                                height="16"
-                                decoding="async"
-                                data-nimg="1"
-                                className="mr-1 h-4 w-4 object-cover"
-                                src="https://d26c7l40gvbbg2.cloudfront.net/tool_icons/sketch.svg"
-                              />
-                              <span className="capitalize leading-5 lg:inline">
-                                {course.duration} Months{" "}
-                              </span>
-                            </span>
-                            <span className="border-primaryBorder hover:bg-gray-gray1 mb-2 mr-2 inline-flex items-center justify-between rounded-full border bg-white px-3 py-0.5 text-xs capitalize ">
-                              <img
-                                alt=" "
-                                loading="lazy"
-                                width="16"
-                                height="16"
-                                decoding="async"
-                                data-nimg="1"
-                                className="mr-1 h-4 w-4 object-cover"
-                                src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik00LjgyIDE5LjQwN2MtMi45NjYtMS44NTctNC45NC01LjE1My00Ljk0LTguOTA3IDAtNS43OTUgNC43MDUtMTAuNSAxMC41LTEwLjUgMy42MDUgMCA2Ljc4OSAxLjgyMSA4LjY4IDQuNTkzIDIuOTY2IDEuODU3IDQuOTQgNS4xNTMgNC45NCA4LjkwNyAwIDUuNzk1LTQuNzA1IDEwLjUtMTAuNSAxMC41LTMuNTk5IDAtNi43NzgtMS44MTUtOC42Ny00LjU3OWwtLjAxLS4wMTR6bTguNjgtMTUuNDA3YzUuMjQzIDAgOS41IDQuMjU3IDkuNSA5LjVzLTQuMjU3IDkuNS05LjUgOS41LTkuNS00LjI1Ny05LjUtOS41IDQuMjU3LTkuNSA5LjUtOS41em0uNSAxNWgtMS4wMjF2LS44NzFjLTIuMzQzLS4zMDItMi41OTktMi4xNzktMi41OTktMi43NDRoMS4wOTFjLjAyNS40MDUuMTU3IDEuNzc0IDIuMTgyIDEuNzc0LjU5OSAwIDEuMDg4LS4xNDEgMS40NTMtLjQxOS4zNjEtLjI3Ni41MzYtLjYxMi41MzYtMS4wMjkgMC0uNzkzLS41MTMtMS4zNjctMi4wNy0xLjcxOC0yLjM2OC0uNTM2LTIuOTIzLTEuMzk4LTIuOTIzLTIuNTMzIDAtMS41MDkgMS4yMjMtMi4yMTYgMi4zMy0yLjQwNnYtMS4wNTRoMS4wMjF2MS4wMTVjMi40OTEuMTk1IDIuNjk1IDIuMjE1IDIuNjk1IDIuNzcxaC0xLjA5OGMwLTEuMTYxLS45MTgtMS43NjYtMS45OTYtMS43NjYtMS4wNzcgMC0xLjg1NC41MzItMS44NTQgMS40MDggMCAuNzgxLjQzOSAxLjE2NSAxLjk5NCAxLjU1NCAxLjg3OS40NzMgMi45OTkgMS4xMDEgMi45OTkgMi42ODEgMCAxLjc0NC0xLjUwOSAyLjM5My0yLjc0IDIuNDkzdi44NDR6bTIuODUtMTUuNDUzYy0xLjY5Ni0xLjU4LTMuOTcxLTIuNTQ3LTYuNDctMi41NDctNS4yNDMgMC05LjUgNC4yNTctOS41IDkuNSAwIDIuNjMzIDEuMDczIDUuMDE3IDIuODA2IDYuNzM5bC0uMDA0LS4wMWMtLjQ0LTEuMTU5LS42ODItMi40MTYtLjY4Mi0zLjcyOSAwLTUuNzk1IDQuNzA1LTEwLjUgMTAuNS0xMC41IDEuMTcxIDAgMi4yOTguMTkyIDMuMzUuNTQ3eiIvPjwvc3ZnPg=="
-                              />
-                              <span className="capitalize leading-5 lg:inline" />
-                              {course.price} Dt
-                            </span>
-                          </div>
-                          <span className="border-primaryBorder hover:bg-gray-gray1 mb-2 mr-2 inline-flex items-center justify-between rounded-full border bg-white px-3 py-0.5 text-xs capitalize ">
-                            <img
-                              alt=" "
-                              loading="lazy"
-                              width="16"
-                              height="16"
-                              decoding="async"
-                              data-nimg="1"
-                              className="h-0 w-0"
-                              src="https://d26c7l40gvbbg2.cloudfront.net/tool_icons/design_thinking.svg"
-                            />
-                            <span className="capitalize leading-5 lg:inline">
-                              {course.category}{" "}
-                            </span>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </a>
-                </li>
-              </ul>
+        const fetchReview = async () => {
+            try {
+                const response = await axios.get(url);
+                setRatings(response.data.ratings);
+                setAverageRating(response.data.averageRating);
+            } catch (error) {
+                console.log(error);
+            }
+        };
+
+        if (id) {
+            fetchReview();
+        }
+    }, [getCourseById, id]);
+    if (!course) {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <BeatLoader color="#1E9645" size={20} />
             </div>
-          </div>
-          <Dialog open={open} onClose={handleClose}>
-            <ThemeProvider theme={theme}>
-              <form>
-                <div className="mt-8 flex justify-center">
-                  <img
-                    src="/img/logo.png"
-                    alt="Logo"
-                    width="150"
-                    height="150"
-                    className="mx-auto"
-                  />
+        );
+    }
+
+    const handleClosee = () => {
+        setOpens(false);
+    };
+    const handleClickOpenss = (courseId, userId) => {
+        setOpens(`/review/${courseId}/reviews/${userId}`);
+    };
+    const onSubmitt = async (data) => {
+        const reviewData = {
+            rating: rating,
+        };
+        let url = `https://expertise-shaper-37ut.onrender.com/api/review/${courseId}/reviews/${userId}`;
+        console.log("url", url);
+        try {
+            const response = await axios.post(url, reviewData);
+            console.log("response", response);
+            toast.success("Review added successfully");
+        } catch (error) {
+            console.error(error);
+            toast.error("An error occurred while adding your review");
+        }
+        setRating("");
+    };
+    return (
+        <>
+            <AppLayout>
+                <AppLayout.Header>{course.name} course </AppLayout.Header>
+                <div className="h-full overflow-scroll px-6 pb-10 pt-4">
+                    <ToastContainer />
+                    <Container>
+                        <Row>
+                            <Col>
+                                <Card
+                                    style={{
+                                        width: "35rem",
+                                        backgroundColor: "",
+                                        borderColor: "",
+                                    }}
+                                >
+                                    <Card.Body>
+                                        <Row className="pb-3">
+                                            <Col>
+                                                <div style={{ display: "flex", alignItems: "center" }}>
+                                                    <div className="mr-2">
+                                                        <img
+                                                            alt=" "
+                                                            loading="lazy"
+                                                            width="30"
+                                                            height="30"
+                                                            decoding="async"
+                                                            data-nimg="1"
+                                                            className="object-cover"
+                                                            src={`https://d26c7l40gvbbg2.cloudfront.net/tool_icons/${course.name}.svg`}
+                                                        />
+                                                    </div>
+                                                    <Card.Title>
+                                                        {isenrolled && progress != 100 ? (
+                                                            <Link to={`/courses/courseContent/${course._id}`}>
+                                                                {course.name}
+                                                            </Link>
+                                                        ) : (
+                                                            <>
+                                                                {" "}
+                                                                <Link>{course.name}</Link>
+                                                            </>
+                                                        )}
+                                                    </Card.Title>
+                                                </div>
+                                            </Col>
+                                            <Col className="d-flex justify-content-end">
+                                                <PrimaryButton
+                                                    onClick={handleClickOpen}
+                                                    variant="primary"
+                                                    size="sm"
+                                                    disabled={isenrolled}
+                                                >
+                                                    {isenrolled ? "Enrolled" : "Enroll"}
+                                                </PrimaryButton>
+                                            </Col>
+                                        </Row>
+                                        <hr />
+                                        <Card.Text className=" mr-1 text-xs font-normal capitalize sm:mb-0">
+                                            Price: {course.price} Dt
+                                        </Card.Text>
+                                        <hr />
+                                        <Card.Text className=" mr-1 text-xs font-normal capitalize sm:mb-0">
+                                            Duration: {course.duration} Months
+                                        </Card.Text>
+                                        <hr />{" "}
+                                        <small>
+                                            <Card.Text className=" mr-1 text-xs font-normal capitalize sm:mb-0">
+                                                {" "}
+                                                [ {format(
+                                                    new Date(course.startdate),
+                                                    "yyyy-MM-dd"
+                                                )} - {format(new Date(course.enddate), "yyyy-MM-dd")} ]{" "}
+                                            </Card.Text>{" "}
+                                        </small>
+                                        <hr />{" "}
+                                        <Row>
+                                            {" "}
+                                            <Card.Text className="text-muted pt-4">
+                                                <div className="d-flex justify-content-between align-items-center">
+                                                    <small className="text-muted">
+                                                        Posted on:{" "}
+                                                        {format(new Date(course.createdAt), "yyyy-MM-dd")}
+                                                        <br />
+                                                        {course.duration} Sessions
+                                                    </small>
+                                                    <small>
+                                                        {isInWishlist ? (
+                                                            <Button
+                                                                style={{
+                                                                    color: "#1E9645",
+                                                                }}
+                                                                onClick={removeWishList}
+                                                            >
+                                                                <FavoriteIcon style={{ width: 20 }} />
+                                                            </Button>
+                                                        ) : (
+                                                            <Button
+                                                                style={{
+                                                                    color: "grey",
+                                                                }}
+                                                                onClick={addToWishList}
+                                                            >
+                                                                <FavoriteIcon style={{ width: 20 }} />
+                                                            </Button>
+                                                        )}
+                                                    </small>
+                                                </div>
+                                                {isenrolled ? (<> <Box>
+                                                    {averageRating ? (
+                                                        <>
+                                                            <Typography variant="h6">
+                                                                {averageRating.toFixed(1)}
+                                                            </Typography>
+                                                            <Rating
+                                                                name="average-rating"
+                                                                value={averageRating}
+                                                                readOnly
+                                                            />
+                                                        </>
+                                                    ) : (
+                                                        <Rating name="no-rating" value={0} readOnly />
+                                                    )}
+                                                </Box>
+                                                    <PrimaryButton
+                                                        width="100"
+                                                        onClick={() => handleClickOpenss(course._id, userId)}
+                                                    >
+                                                        Review
+                                                    </PrimaryButton></>) : null}
+
+                                                <Dialog
+                                                    open={opens}
+                                                    onClose={handleClose}
+                                                    fullWidth
+                                                    maxWidth="xs"
+                                                    PaperProps={{ style: { width: "300px" } }}
+                                                >
+                                                    <ThemeProvider theme={theme}>
+                                                        <form onSubmit={handleSubmit(onSubmitt)}>
+                                                            <div className="ml-4 mt-4 flex ">
+                                                                <img
+                                                                    src="/img/logo-hire.png"
+                                                                    alt="Logo"
+                                                                    width="100"
+                                                                    height="100"
+                                                                />
+                                                            </div>
+                                                            <DialogTitle
+                                                                className="text-center text-green-500"
+                                                                variant="h2"
+                                                                style={{ fontSize: "1.5rem" }}
+                                                            >
+                                                                Add Your FeedBack
+                                                            </DialogTitle>
+                                                            <DialogContent>
+                                                                <DialogContentText className="text-center">
+                                                                    We would appreciate your feedback.
+                                                                </DialogContentText>
+
+                                                                <Box
+                                                                    component="fieldset"
+                                                                    mb={3}
+                                                                    borderColor="transparent"
+                                                                    style={{ textAlign: "center" }}
+                                                                >
+                                                                    <Rating
+                                                                        name="rating"
+                                                                        value={rating}
+                                                                        precision={1}
+                                                                        onChange={(event, newValue) => {
+                                                                            setRating(newValue);
+                                                                        }}
+                                                                    />
+                                                                </Box>
+                                                            </DialogContent>
+                                                            <DialogActions>
+                                                                <Button onClick={handleClosee}>Cancel</Button>
+                                                                <Button type="submitt">Submit</Button>
+                                                            </DialogActions>
+                                                        </form>
+                                                    </ThemeProvider>
+                                                </Dialog>
+                                            </Card.Text>
+                                        </Row>
+                                    </Card.Body>
+                                </Card>
+
+                                <Row>
+                                    <div className="mb-10 mt-10">
+                                        <p className="text mb-4 text-base font-semibold">
+                                            {" "}
+                                            About this course
+                                        </p>
+                                        <div className="text-sm font-normal">
+                                            <p>{course.description}</p>
+                                        </div>
+                                    </div>
+                                </Row>
+                            </Col>
+
+                            <Col className="ml-12 ">
+                                <Card>
+                                    <Card.Body>
+                                        <Card.Title style={{ fontSize: "15px" }}>
+                                            <div style={{ display: "flex", alignItems: "center" }}>
+                                                <p
+                                                    style={{
+                                                        fontSize: "15px",
+                                                        margin: 0,
+                                                    }}
+                                                >
+                                                    Similar Courses
+                                                </p>
+                                                <ArrowSmallRightIcon className="ml-2 h-4 w-4" />
+                                            </div>
+                                        </Card.Title>
+                                        <div style={{ textAlign: "center", color: "#1E9645" }}>
+                                            <ul>
+                                                {relatedCourses.map((course) => (
+                                                    <li key={course._id}>
+                                                        <Link to={`/courses/${course._id}`}>
+                                                            {course.name}
+                                                        </Link>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </Card.Body>
+                                </Card>
+                                <Row>
+                                    {isenrolled ? (
+                                        <div className="flex items-center">
+
+                                            <button
+                                                onClick={goToTakeCoursePage}
+                                                className="absolute bottom-0 mb-5 ml-11 mr-6 flex items-center rounded-md px-6 py-2 text-white"
+                                                style={{ backgroundColor: "#1E9645" }}
+                                            >
+                                                Take the course{" "}
+                                                <ArrowSmallRightIcon className="ml-2 h-4 w-4" />
+                                            </button>
+
+                                        </div>
+                                    ) : null}
+                                </Row>
+                            </Col>
+                        </Row>
+                    </Container>
                 </div>
-                <DialogTitle className="text-center">Payment</DialogTitle>
-                <DialogContent>
-                  <DialogContentText className="text-center">
-                    We need your credit card informations{" "}
-                  </DialogContentText>
-                  <TextField
-                    autoFocus
-                    margin="dense"
-                    id="cardnumber"
-                    label="Card Holder*"
-                    type="text"
-                    fullWidth
-                    variant="standard"
-                  />
-                  <TextField
-                    autoFocus
-                    margin="dense"
-                    id="cardnumber"
-                    label="Credit Card number*"
-                    type="text"
-                    fullWidth
-                    variant="standard"
-                  />
-                  <div className="flex">
-                    <div className="mb-0.5 flex items-center justify-between">
-                      <TextField
-                        autoFocus
-                        margin="dense"
-                        id="cardnumber"
-                        label=" "
-                        type="date"
-                        fullWidth
-                        variant="standard"
-                      />
-                    </div>
-                    <div
-                      className="end-0 top-0 flex"
-                      style={{ marginLeft: "40px" }}
-                    >
-                      <TextField
-                        autoFocus
-                        margin="dense"
-                        id="cardnumber"
-                        label="CVC*"
-                        type="text"
-                        fullWidth
-                        variant="standard"
-                      />
-                    </div>
-                  </div>
-                </DialogContent>
-                <DialogActions>
-                  <Button onClick={handleClose}>Cancel</Button>
-                  <Button onClick={handleEnroll} type="submit">
-                    Submit
-                  </Button>
-                </DialogActions>
-              </form>
-            </ThemeProvider>
-          </Dialog>
-        </AppLayout.Content>
-      </AppLayout>
-    </>
-  );
+
+                <Dialog open={open} onClose={handleClose}>
+                    <ThemeProvider theme={theme}>
+                        <form>
+                            <div className="mt-8 flex justify-center">
+                                <img
+                                    src="/img/logo.png"
+                                    alt="Logo"
+                                    width="150"
+                                    height="150"
+                                    className="mx-auto"
+                                />
+                            </div>
+                            <DialogTitle className="text-center">Payment</DialogTitle>
+                            <DialogContent>
+                                <DialogContentText className="text-center">
+                                    We need your credit card informations{" "}
+                                </DialogContentText>
+                                <TextField
+                                    autoFocus
+                                    margin="dense"
+                                    id="cardnumber"
+                                    label="Card Holder*"
+                                    type="text"
+                                    fullWidth
+                                    variant="standard"
+                                />
+                                <TextField
+                                    autoFocus
+                                    margin="dense"
+                                    id="cardnumber"
+                                    label="Credit Card number*"
+                                    type="text"
+                                    fullWidth
+                                    variant="standard"
+                                />
+                                <div className="flex">
+                                    <div className="mb-0.5 flex items-center justify-between">
+                                        <TextField
+                                            autoFocus
+                                            margin="dense"
+                                            id="cardnumber"
+                                            label=" "
+                                            type="date"
+                                            fullWidth
+                                            variant="standard"
+                                        />
+                                    </div>
+                                    <div
+                                        className="end-0 top-0 flex"
+                                        style={{ marginLeft: "40px" }}
+                                    >
+                                        <TextField
+                                            autoFocus
+                                            margin="dense"
+                                            id="cardnumber"
+                                            label="CVC*"
+                                            type="text"
+                                            fullWidth
+                                            variant="standard"
+                                        />
+                                    </div>
+                                </div>
+                            </DialogContent>
+                            <DialogActions>
+                                <Button onClick={handleClose}>Cancel</Button>
+                                <Button onClick={handleEnroll} type="submit">
+                                    Submit
+                                </Button>
+                            </DialogActions>
+                        </form>
+                    </ThemeProvider>
+                </Dialog>
+            </AppLayout>
+        </>
+    );
 }
 
 export default CheckCourse;

@@ -36,13 +36,12 @@ export function Navbar({ brandName, routes, action }) {
                 <span className="text-gray-gray5 text-base italic">for</span>
                 <div className="flex items-center">
                   <div>
-                    <a
-                      className="border-gray-gray7 mx-5 border-b-2 py-1 text-base font-semibold text-greyed"
-                      target="_self"
-                      href="#"
+                    <Link
+                      className="from-gray-gray7 to-gray-gray7 mx-5 bg-gradient-to-r bg-[length:0px_2px] bg-left-bottom bg-no-repeat py-1 text-base font-semibold text-greyed transition-[background-size] duration-200 hover:bg-[length:100%_2px]"
+                      to="/courses"
                     >
                       Courses
-                    </a>
+                    </Link>
                   </div>
                   <div>
                     <Link
@@ -53,25 +52,19 @@ export function Navbar({ brandName, routes, action }) {
                     </Link>
                   </div>
                   <div>
-                    <span className="text-gray-gray5 mx-5 text-base">|</span>
-                    <a
+                    <Link
                       className="from-gray-gray7 to-gray-gray7 mx-5 bg-gradient-to-r bg-[length:0px_2px] bg-left-bottom bg-no-repeat py-1 text-base font-semibold text-greyed transition-[background-size] duration-200 hover:bg-[length:100%_2px]"
-                      href="#"
+                      to="/chat"
                     >
-                      About Us
-                    </a>
+                      ChatBot
+                    </Link>
                   </div>
-                  <div>
-                    <a
-                      className="from-gray-gray7 to-gray-gray7 mx-5 bg-gradient-to-r bg-[length:0px_2px] bg-left-bottom bg-no-repeat py-1 text-base font-semibold text-greyed transition-[background-size] duration-200 hover:bg-[length:100%_2px]"
-                      href="#"
-                    >
-                      Blog
-                    </a>
-                  </div>
+
+
                 </div>
               </div>
             </div>
+
             <div className="hidden items-center gap-4 lg:flex">
               {user ? (
                 <UserDropdown user={user} />

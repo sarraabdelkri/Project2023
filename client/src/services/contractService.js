@@ -4,35 +4,28 @@ const contractService = {
     getAllJobs: () => {
         return API.get("/job/getalljobs");
     },
-
+    getallapplications: () => {
+        return API.get("/application/getAll");
+    },
     getAllContracts: () => {
         return API.get("/contract/getAllContracts");
     },
+    
     getuserbyid: (id) => {
         return API.get(`/user/getUser/${id}`);
     },
     getjobbyid: (id) => {
         return API.get(`/job/${id}`);
     },
-
+getContractByidemployer: (employerId) => {
+        return API.get(`/contract/employer/${employerId}`);
+    
+    },
 
     deleteContract: (id) => {
         return API.delete(`/contract/contracts/${id}`);
     },
-    // addContract: (startDate, endDate, type, user, job) => {
-    //     const userId = user ? user.id : null;
-    //     const jobId = job ? job.id : null;
-    //     if (userId === null || jobId === null) {
-    //       return Promise.reject(new Error('User or job is undefined or missing an ID property'));
-    //     }
-    //     return API.post(`/contract/contracts/${userId}/${jobId}`, {
-    //         startDate,
-    //         endDate,
-    //         type,
-    //         user,
-    //         job
-    //     });
-    //   },
+  
      addContract : async (startDate, endDate, type, userId, jobId) => {
         try {
             const user = await API.get(`/user/getUser/${userId}`);
@@ -56,10 +49,13 @@ const contractService = {
       
       
     updateContract:(id,contractstatus)=>{
-        return API.put(`/contract/contracts/${id}/status`,{
+        return API.put(`/contract/contracts/${id}`,{
             contractstatus  
         });
     },
+    getcontractById: (id) => {
+        return API.get(`/contract/${id}`);
+      },
    
 }
 

@@ -12,15 +12,27 @@ export * from "@/pages/forgot-done";
 export * from "@/pages/dashboard";
 export * from "@/pages/settings";
 export * from "@/components/courses/courses";
-export * from "@/components/courses/addCourse";
+export * from "@/pages/AddCourses";
 export * from "@/components/courses/checkCourse";
 export * from "@/components/courses/coursesCalendar";
+export * from "@/components/courses/enrolledCourses";
+export * from "@/components/courses/courseContent";
 export * from "@/pages/dashboard-instructor";
 export * from "@/pages/allAssessments";
 export * from "@/pages/contract";
 export * from "@/pages/settings";
-export * from "@/pages/addContract";
+export * from "@/pages/AddContract";
 export * from "@/pages/EditContracts";
+export * from "@/pages/detailContract";
+export * from "@/pages/review";
 export * from "@/pages/addCommentAssessment";
 export * from "@/pages/PassQuiz";
+export * from "@/pages/viewResultAssessments";
+export * from "@/pages/addAssessment";
+export * from "@/pages/results"
+export * from "@/pages/chat"
+export * from "@/pages/other-jobs"
+export * from "@/pages/postJob"
+
+
 

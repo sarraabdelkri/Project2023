@@ -36,6 +36,11 @@ const assessmentSchema = new mongoose.Schema({
         type: Schema.Types.ObjectId,
         required: true
     },
+    courseName: {
+        type: String,
+        required: true
+    },
+
     scores: {
         type: Array,
         default: []

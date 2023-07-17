@@ -1,33 +1,40 @@
 import React, { useState, useEffect } from "react";
-import moment from "moment";
 import { AppLayout } from "@/widgets/layout";
+import moment from "moment";
 import { Calendar, momentLocalizer } from "react-big-calendar";
-import "../../../node_modules/react-big-calendar/lib/css/react-big-calendar.css"
+import "../../../node_modules/react-big-calendar/lib/css/react-big-calendar.css";
 import courseStore from "@/store/courseStore";
+import { Card } from "@material-tailwind/react";
+import { useNavigate } from "react-router-dom";
 const localizer = momentLocalizer(moment);
-
 function CoursesCalendar() {
   const [courses, setCourses] = useState([]);
   const getCourseById = courseStore((state) => state.getCourseById);
-  const enrolledcourses = JSON.parse(localStorage.getItem("enrolledcourses"));
-  const course = courseStore((state) => state.course);
-  const courseIds = enrolledcourses.map((course) => course.course);
-
+  const getEnrolledCourses = courseStore((state) => state.getEnrolledCourses);
+  const user = JSON.parse(localStorage.getItem("user"));
+  const userid = user ? user._id : null;
+  const navigate=useNavigate()
+  const getCourses = async () => {
+    const enrolledCourses = await getEnrolledCourses(userid);
+    const courseDetails = await Promise.all(
+      enrolledCourses.map(async (course) => {
+        const courseDetails = await getCourseById(course.course);
+        return {
+          ...courseDetails,
+          progress: course.progress,
+          completed: course.completed,
+          enrolledCourseId: course._id,
+        };
+      })
+    );
+    setCourses(courseDetails);
+  };
   useEffect(() => {
-    setCourses(enrolledcourses);
+    if (!user) {
+      navigate('/sign-in');
+    }
+    getCourses();
   }, []);
-  useEffect(() => {
-    const fetchCourse = async () => {
-      const courses = [];
-      courseIds.forEach(async (courseId) => {
-        const course = await getCourseById(courseId);
-        courses.push(course);
-      });
-      setCourses(courses);
-    };
-    fetchCourse();
-  }, []);
-
   const events =
     courses &&
     courses.map((course) => ({
@@ -35,25 +42,34 @@ function CoursesCalendar() {
       start: new Date(course.startdate),
       end: new Date(course.enddate),
     }));
-
+  const eventStyleGetter = (event, start, end, isSelected) => {
+    const backgroundColor = isSelected ? "#31708f" : "#f0ad4e";
+    const color = isSelected ? "#fff" : "#000";
+    const style = {
+      backgroundColor,
+      color,
+      borderRadius: "10px",
+      border: "none",
+    };
+    return {
+      style,
+    };
+  };
   return (
     <AppLayout>
       <AppLayout.Header>Courses Calendar</AppLayout.Header>
       <AppLayout.Content>
-        <div>
+        <Card className="pt-3">
           <Calendar
             localizer={localizer}
             events={events}
             startAccessor="start"
             endAccessor="end"
             style={{ height: 500 }}
-            eventPropGetter={(event, start, end, isSelected) => {
-              const backgroundColor = "#f0ad4e";
-              return { style: { backgroundColor } };
-            }}
-            onSelectEvent={() => window.location.href = '/courses'}
+            eventPropGetter={eventStyleGetter}
+            onSelectEvent={() => (window.location.href = `/courses`)}
           />
-        </div>
+        </Card>
       </AppLayout.Content>
     </AppLayout>
   );

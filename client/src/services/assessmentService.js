@@ -8,6 +8,9 @@ const assessmentService = {
         id = localStorage.getItem("id");
         return API.get(`/assessment/getMyAssessment/${id}`);
     },
+    getAssessmentsByCourseName: (courseName) => {
+        return API.get(`/assessment/getAssessmentsByCourseName/${courseName}`);
+    },
     createAssessment: () => {
         let assessment = {
             mustBeSignedIn: mustBeSignedIn,

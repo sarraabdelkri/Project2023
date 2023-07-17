@@ -1,64 +1,94 @@
 import { UserDropdown } from "@/components/user";
-import { Link } from "react-router-dom";
+import { NotificationDropdown } from "@/components/notification/notification-dropdown";
+import { Link, useLocation } from "react-router-dom";
 import { Sidebar } from ".";
 import { PrimaryButton, SecondaryButton } from "../buttons";
 import RequestEmployerProfile from "../../pages/requestEmployer";
-import PostJob from "../../pages/PostJob";
+import { PostJob } from "@/pages";
+import { HeartIcon } from "@heroicons/react/24/outline";
 
 export function AppLayout({ children }) {
-  return (
-    <div className="flex h-screen justify-center overflow-hidden">
-      <div className="hidden h-screen w-[210px] xl:block">
-        <Sidebar />
-      </div>
-      <div className="h-full w-[990px] border-l border-gray-300 ">
-        {children}
-      </div>
-    </div>
-  );
+    return (
+        <> <div className="flex h-screen flex-col overflow-hidden lg:flex-row">
+            <div className="hidden lg:block lg:w-[300px]">
+                <Sidebar />
+            </div>
+            <div className="flex-1 border-t border-gray-300 lg:border-l lg:border-t-0">
+                {children}
+            </div>
+        </div>
+        </>
+    );
 }
 
 AppLayout.Header = function AppLayoutHeader({ children }) {
-  const user = JSON.parse(localStorage.getItem("user"));
+    const user = JSON.parse(localStorage.getItem("user"));
+    return (
+        <><div className="flex h-[56px] items-center justify-between border-b border-gray-300 px-6">
+            <div className="font-medium">
+                {" "}
+                <span
+                    style={{
+                        fontSize: "1rem",
+                        fontWeight: "bold",
+                        fontFamily: "sans-serif",
+                    }}
+                    className="font-medium"
+                >
+                    {children}
+                </span>
+            </div>
+            <div className="flex items-center">
+                {user ? (
+                    <>
+                        <UserDropdown user={user} />
+                        <Link to="/wishlist">
+                            <HeartIcon className="ml-2 h-6 w-6 " />
+                        </Link>
+                        <NotificationDropdown />
+                    </>
+                ) : (
+                    <>
+                        <Link to="/sign-in" className="mr-5">
+                            <SecondaryButton>Sign In</SecondaryButton>
+                        </Link>
+                        <Link to="/sign-up">
+                            <PrimaryButton>Join Us</PrimaryButton>
+                        </Link>
+                    </>
+                )}
+            </div>
+        </div></>
 
-  return (
-    <div className="flex h-[56px] w-full border-b border-r border-gray-300">
-      <div className="flex w-[640px] flex-shrink-0 items-center border-r border-gray-300 px-6 ">
-        <span className="font-medium">{children}</span>
-      </div>
-      <div className="flex w-[350px] flex-shrink-0 items-center justify-end px-6">
-        {user ? (
-          <UserDropdown user={user} />
-        ) : (
-          <>
-            <Link to="/sign-in" className="mr-5">
-              <SecondaryButton>Sign In</SecondaryButton>
-            </Link>
-            <Link to="/sign-up">
-              <PrimaryButton>Join Us</PrimaryButton>
-            </Link>
-          </>
-        )}
-      </div>
-    </div>
-  );
+    );
 };
 
 AppLayout.Content = function AppLayoutContent({ children }) {
-  const user = JSON.parse(localStorage.getItem("user"));
-  return (
-    <div className="flex">
-      <div className="h-screen w-[640px] flex-shrink-0 border-r border-gray-300">
-        {children}
-      </div>
-      <div className="h-screen w-[350px] flex-shrink-0 border-r border-gray-300 p-6">
-        {user.role === "student" &&
-          <RequestEmployerProfile> </RequestEmployerProfile>
-        }
-        {user.role === "employer" && <PostJob />}
-      </div>
-    </div>
-  );
+    const location = useLocation();
+    const user = JSON.parse(localStorage.getItem("user"));
+    return (
+        <><div className="flex h-full flex-col lg:flex-row">
+            <div className="border-gray-300 lg:w-[640px] lg:border-r">{children}</div>
+            <div className="p-6 lg:w-[350px]">
+                {user && user.role === "student" && (
+                    <RequestEmployerProfile> </RequestEmployerProfile>
+
+                )}
+                {user && user.role === "employer" && (<PostJob />)}
+                {location.pathname === "/jobs" && (
+                    <div className="">
+                        <Link to="/other-jobs" className="block px-4 py-2 border-1 rounded-md shadow-md border-gray-700 hover:bg-gray-300 w-fit">
+                            <div className="text-sm text-gray-700 font-bold uppercase">Other jobs</div>
+                        </Link>
+                    </div>
+                )
+
+
+                }
+            </div>
+        </div></>
+
+    );
 };
 
 export default AppLayout;
